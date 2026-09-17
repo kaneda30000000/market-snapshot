@@ -1,7 +1,7 @@
 {
   "date": "2026-09-17",
-  "generated_at": "2026-09-17T23:03:05+09:00",
-  "ok_count": 9,
+  "generated_at": "2026-09-17T23:14:10+09:00",
+  "ok_count": 10,
   "total": 10,
   "items": [
     {
@@ -17,26 +17,26 @@
       "label": "シカゴ日経平均先物（CME円建て）",
       "ok": true,
       "errors": [],
-      "value": "64,980円（9/17 22:52時点）",
-      "change": "前営業日終値比 +730円（+1.14%）",
+      "value": "64,840円（9/17 23:04時点）",
+      "change": "前営業日終値比 +590円（+0.92%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
     {
       "label": "TOPIX",
-      "ok": false,
-      "errors": [
-        "Yahoo Finance: Yahoo ^TOPX: 'close'",
-        "Yahoo Finance: Yahoo 998405.T: HTTP 404",
-        "Stooq: データ行が2行未満"
-      ]
+      "ok": true,
+      "errors": [],
+      "value": "4,094.19（9/17終値）",
+      "change": "前日比 +32.47ポイント（+0.80%）",
+      "source": "松井証券 TOPIX時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index"
     },
     {
       "label": "ドル円",
       "ok": true,
       "errors": [],
-      "value": "155.60円（9/17 23:04時点）",
-      "change": "前営業日終値比 +0.34円（+0.22%）",
+      "value": "155.64円（9/17 23:14時点）",
+      "change": "前営業日終値比 +0.38円（+0.24%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
@@ -44,8 +44,8 @@
       "label": "ニューヨークダウ",
       "ok": true,
       "errors": [],
-      "value": "51,657.57ドル（9/17終値）",
-      "change": "前日比 +195.67ドル（+0.38%）",
+      "value": "51,659.14ドル（9/17終値）",
+      "change": "前日比 +197.24ドル（+0.38%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
@@ -53,8 +53,8 @@
       "label": "ナスダック総合指数",
       "ok": true,
       "errors": [],
-      "value": "26,335.12（9/17終値）",
-      "change": "前日比 +356.69ポイント（+1.37%）",
+      "value": "26,374.92（9/17終値）",
+      "change": "前日比 +396.49ポイント（+1.53%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
@@ -89,12 +89,12 @@
       "label": "Fear & Greed指数（CNN）",
       "ok": true,
       "errors": [],
-      "value": "29.1（9/17 23:01時点）",
+      "value": "29.1（9/17 23:11時点）",
       "change": "前日 26.5、区分 Fear（恐怖）",
       "source": "CNN Fear & Greed Index",
       "source_url": "https://edition.cnn.com/markets/fear-and-greed"
     }
   ],
-  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経平均株価**｜64,136.25円（9/17終値） ／ 前日比 +213.25円（+0.33%）\n2. **シカゴ日経平均先物（CME円建て）**｜64,980円（9/17 22:52時点） ／ 前営業日終値比 +730円（+1.14%）\n3. **TOPIX**｜未取得（自動取得に失敗）\n4. **ドル円**｜155.60円（9/17 23:04時点） ／ 前営業日終値比 +0.34円（+0.22%）\n5. **ニューヨークダウ**｜51,657.57ドル（9/17終値） ／ 前日比 +195.67ドル（+0.38%）\n6. **ナスダック総合指数**｜26,335.12（9/17終値） ／ 前日比 +356.69ポイント（+1.37%）\n7. **日本10年国債利回り**｜2.998%（9/16） ／ 前日比 -3.0bp\n8. **米国10年国債利回り**｜4.947%（9/17） ／ 前日比 -5.9bp\n9. **日経平均ボラティリティー・インデックス（日経VI）**｜28.15（9/17終値） ／ 前日比 -0.29ポイント（-1.02%）\n10. **Fear & Greed指数（CNN）**｜29.1（9/17 23:01時点） ／ 前日 26.5、区分 Fear（恐怖）",
-  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
+  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経平均株価**｜64,136.25円（9/17終値） ／ 前日比 +213.25円（+0.33%）\n2. **シカゴ日経平均先物（CME円建て）**｜64,840円（9/17 23:04時点） ／ 前営業日終値比 +590円（+0.92%）\n3. **TOPIX**｜4,094.19（9/17終値） ／ 前日比 +32.47ポイント（+0.80%）\n4. **ドル円**｜155.64円（9/17 23:14時点） ／ 前営業日終値比 +0.38円（+0.24%）\n5. **ニューヨークダウ**｜51,659.14ドル（9/17終値） ／ 前日比 +197.24ドル（+0.38%）\n6. **ナスダック総合指数**｜26,374.92（9/17終値） ／ 前日比 +396.49ポイント（+1.53%）\n7. **日本10年国債利回り**｜2.998%（9/16） ／ 前日比 -3.0bp\n8. **米国10年国債利回り**｜4.947%（9/17） ／ 前日比 -5.9bp\n9. **日経平均ボラティリティー・インデックス（日経VI）**｜28.15（9/17終値） ／ 前日比 -0.29ポイント（-1.02%）\n10. **Fear & Greed指数（CNN）**｜29.1（9/17 23:11時点） ／ 前日 26.5、区分 Fear（恐怖）",
+  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [松井証券 TOPIX時系列](https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
 }
