@@ -176,41 +176,29 @@ def pdf_text(content):
     return "\n".join((pg.extract_text() or "") for pg in pypdf.PdfReader(io.BytesIO(content)).pages)
 
 
-def jpx_prime_counts(day):
-    """指定日の東証プライム 値上り・値下り銘柄数。PDFが無い(404)なら None。接続できなければ例外"""
-    ymd = day.strftime("%Y%m%d")
-    r, err = None, None
-    for i in range(3):
-        try:
-            r = S.get(JPX_PDF.format(ymd), timeout=25,
-                      headers={"Referer": "https://www.jpx.co.jp/markets/equities/volume-and-value/"})
-            if r.status_code in (200, 404):
-                break
-            err = f"HTTP {r.status_code}"
-        except requests.RequestException as e:
-            r, err = None, type(e).__name__
-        time.sleep(3)
-    if r is None or r.status_code not in (200, 404):
-        raise RuntimeError(f"JPXに接続できない（{ymd}: {err}）")
-    if r.status_code == 404:
-        return None
-    ctype = r.headers.get("Content-Type", "")
-    if not r.content.startswith(b"%PDF"):
-        raise RuntimeError(f"JPX {ymd}: PDFではない応答（{ctype}）")
-    text = pdf_text(r.content)
+JPX_LIST = "https://www.jpx.co.jp/markets/equities/volume-and-value/index.html"
+ADV_FILE = "advdec_v3.json"   # JPXは最新1日分のPDFしか置かないため、毎日取得して自前で蓄積する
+
+
+def parse_prime_counts(content, ymd):
+    if not content.startswith(b"%PDF"):
+        raise RuntimeError(f"JPX {ymd}: PDFではない応答")
+    text = pdf_text(content)
     if ymd not in text:
         raise RuntimeError(f"JPX {ymd}: PDF内に日付がない")
+    pat = r"\d[\d,]*(?:\.\d+)?"
+    nums = None
     for line in text.splitlines():
-        nums = re.findall(r"\d[\d,]*(?:\.\d+)?", line)
-        if "プライム" in line and len(nums) == 14:
+        found = re.findall(pat, line)
+        if "プライム" in line and len(found) == 14:
+            nums = found
             break
-    else:
-        rows = [re.findall(r"\d[\d,]*(?:\.\d+)?", ln) for ln in text.splitlines()]
-        rows = [x for x in rows if len(x) == 14]
+    if nums is None:
+        rows = [x for x in (re.findall(pat, ln) for ln in text.splitlines()) if len(x) == 14]
         if rows:
             nums = rows[0]
         else:
-            toks = re.findall(r"\d[\d,]*(?:\.\d+)?", text)
+            toks = re.findall(pat, text)
             if ymd not in toks or len(toks) < toks.index(ymd) + 15:
                 raise RuntimeError(f"JPX {ymd}: 騰落銘柄数の行が見つからない")
             i = toks.index(ymd)
@@ -224,41 +212,50 @@ def jpx_prime_counts(day):
     return int(up), int(down)
 
 
+def load_adv():
+    f = OUT / ADV_FILE
+    return json.loads(f.read_text("utf-8")) if f.exists() else {}
+
+
+def jpx_collect():
+    """JPXの掲載ページから、いま置かれている後場の商況プリントを取得して記録に追加する"""
+    cache = load_adv()
+    page = get(JPX_LIST).text
+    links = sorted(set(re.findall(r'href="([^"]*?/2_(\d{8})\.pdf)"', page)))
+    if not links:
+        raise RuntimeError("JPXの掲載ページに商況プリント（後場）のリンクがない")
+    added = []
+    for href, ymd in links:
+        key = f"{ymd[:4]}-{ymd[4:6]}-{ymd[6:]}"
+        if key in cache:
+            continue
+        url = href if href.startswith("http") else "https://www.jpx.co.jp" + href
+        up, down = parse_prime_counts(get(url).content, ymd)
+        cache[key] = [up, down]
+        added.append(key)
+    OUT.mkdir(exist_ok=True)
+    (OUT / ADV_FILE).write_text(json.dumps(dict(sorted(cache.items())), ensure_ascii=False, indent=0), "utf-8")
+    print("JPX記録:", "追加 " + ", ".join(added) if added else "追加なし", f"（計{len(cache)}日）")
+    return cache
+
+
 def advdec_ratios():
-    cache_file = OUT / "advdec_v2.json"   # 旧版の記録（誤って休場扱いした日を含む）は使わない
-    cache = json.loads(cache_file.read_text("utf-8")) if cache_file.exists() else {}
-    sessions, day, fetched, miss_streak, found_any = [], TODAY, 0, 0, False
     try:
-        for _ in range(70):
-            day -= dt.timedelta(days=1)
-            if day.weekday() >= 5:
-                continue
-            key = day.isoformat()
-            if key not in cache:
-                if fetched >= 45:
-                    break
-                got = jpx_prime_counts(day)
-                fetched += 1
-                time.sleep(0.5)
-                if got is None:
-                    miss_streak += 1
-                    if not found_any and miss_streak >= 5:
-                        raise RuntimeError("直近の平日5日分のPDFがすべて404（URLの変更かアクセス拒否の可能性）")
-                    if (TODAY - day).days > 3:
-                        cache[key] = "休場"
-                    continue
-                miss_streak, found_any = 0, True
-                cache[key] = list(got)
-            if isinstance(cache[key], list):
-                found_any = True
-                sessions.append((day, *cache[key]))
-            if len(sessions) >= 26:
-                break
-    finally:
-        OUT.mkdir(exist_ok=True)
-        cache_file.write_text(json.dumps(dict(sorted(cache.items())[-120:]), ensure_ascii=False, indent=0), "utf-8")
-    if len(sessions) < 26:
-        raise RuntimeError(f"営業日データが{len(sessions)}日分しかない")
+        cache = jpx_collect()
+        collect_err = None
+    except Exception as e:
+        cache, collect_err = load_adv(), str(e)[:120]
+    trading = sorted(nikkei_csv("nikkei_stock_average_daily_jp.csv")["rows"])  # 東証の営業日一覧として使う
+    days = [d for d, _ in trading if d < TODAY]
+    if not days:
+        raise RuntimeError("営業日一覧が取れない")
+    if days[-1].isoformat() not in cache:
+        raise RuntimeError(f"最新営業日{md(days[-1])}のJPX記録がない" + (f"（{collect_err}）" if collect_err else ""))
+    window = days[-26:]
+    have = [d for d in window if d.isoformat() in cache]
+    if len(window) < 26 or len(have) < 26:
+        raise RuntimeError(f"JPXの記録が連続26営業日分そろっていない（直近26営業日のうち{len(have)}日分）")
+    sessions = [(d, *cache[d.isoformat()]) for d in reversed(window)]  # 新しい順
 
     def ratio(start, n):
         part = sessions[start:start + n]
@@ -293,7 +290,7 @@ def nikkeiyosoku_ratio25():
     cur, prev = float(ratio), float(rows[1][4])
     if not 30 < cur < 300:
         raise RuntimeError(f"値が想定範囲外: {cur}")
-    value = f"25日 {cur:.2f}%（{md(day)}時点、25日は{zone_of(cur)}。10日・6日は取得できず）{stale(day)}"
+    value = f"25日 {cur:.2f}%（{md(day)}時点、25日は{zone_of(cur)}。10日・6日は記録の蓄積待ち）{stale(day)}"
     return value, f"前日比 25日 {sg(cur - prev, 2)}ポイント"
 
 
@@ -457,4 +454,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--collect-jpx" in sys.argv:
+        jpx_collect()
+    else:
+        main()
