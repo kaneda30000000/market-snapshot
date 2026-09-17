@@ -1,0 +1,278 @@
+#!/usr/bin/env python3
+"""朝のマーケット・ブリーフ用スナップショット取得。
+LLMや検索を使わず、機械可読なデータ元から数値を取り、決まった書式のMarkdownを出力する。
+取得できない項目は数値を作らず「未取得」と書く。
+"""
+import csv, io, json, re, sys, time, datetime as dt
+from pathlib import Path
+from zoneinfo import ZoneInfo
+import requests
+
+JST = ZoneInfo("Asia/Tokyo")
+NOW = dt.datetime.now(JST)
+TODAY = NOW.date()
+OUT = Path(__file__).parent / "data"
+
+S = requests.Session()
+S.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Accept-Language": "ja,en;q=0.8",
+})
+
+
+def get(url, **kw):
+    last = None
+    for i in range(4):
+        try:
+            r = S.get(url, timeout=25, **kw)
+            if r.status_code == 200 and r.content:
+                return r
+            last = f"HTTP {r.status_code}"
+        except requests.RequestException as e:
+            last = type(e).__name__
+        time.sleep(3 * (i + 1))
+    raise RuntimeError(f"{last}")
+
+
+def dedupe(rows):
+    d = {}
+    for day, v in rows:
+        if v is not None:
+            d[day] = float(v)
+    rows = sorted(d.items())
+    if len(rows) < 2:
+        raise RuntimeError("データ行が2行未満")
+    return rows
+
+
+# ---------------- データ元 ----------------
+def yahoo(sym):
+    """戻り値: {"rows":[(date, close)], "price", "time"}"""
+    err = None
+    for host in ("query1", "query2"):
+        try:
+            r = get(f"https://{host}.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(sym)}",
+                    params={"range": "1mo", "interval": "1d"})
+            res = r.json()["chart"]["result"][0]
+            tz = ZoneInfo(res["meta"].get("exchangeTimezoneName") or "UTC")
+            closes = res["indicators"]["quote"][0]["close"]
+            rows = dedupe((dt.datetime.fromtimestamp(t, tz).date(), c)
+                          for t, c in zip(res["timestamp"], closes))
+            m = res["meta"]
+            return {"rows": rows, "price": m.get("regularMarketPrice"),
+                    "time": m.get("regularMarketTime"), "tz": tz}
+        except Exception as e:
+            err = e
+    raise RuntimeError(f"Yahoo {sym}: {err}")
+
+
+def stooq(sym):
+    r = get("https://stooq.com/q/d/l/", params={"s": sym, "i": "d"})
+    rows = [(dt.date.fromisoformat(x["Date"]), x["Close"])
+            for x in csv.DictReader(io.StringIO(r.text)) if x.get("Close")]
+    return {"rows": dedupe(rows)[-30:]}
+
+
+def nikkei_csv(name):
+    r = get(f"https://indexes.nikkei.co.jp/nkave/historical/{name}")
+    txt = r.content.decode("shift_jis", "ignore")
+    rows = []
+    for line in csv.reader(io.StringIO(txt)):
+        if len(line) >= 2 and re.fullmatch(r"\d{4}/\d{1,2}/\d{1,2}", line[0].strip()):
+            try:
+                rows.append((dt.datetime.strptime(line[0].strip(), "%Y/%m/%d").date(),
+                             float(line[1].replace(",", ""))))
+            except ValueError:
+                pass
+    return {"rows": dedupe(rows)}
+
+
+def parse_jdate(s):
+    s = s.strip()
+    m = re.fullmatch(r"([RHS])(\d+)\.(\d+)\.(\d+)", s)
+    if m:
+        base = {"R": 2018, "H": 1988, "S": 1925}[m[1]]
+        return dt.date(base + int(m[2]), int(m[3]), int(m[4]))
+    m = re.fullmatch(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", s)
+    if m:
+        return dt.date(int(m[1]), int(m[2]), int(m[3]))
+    return None
+
+
+def mof_jgb10():
+    """財務省 国債金利情報（当月分→足りなければ全期間）"""
+    base = "https://www.mof.go.jp/jgbs/reference/interest_rate/"
+    rows = []
+    for name in ("jgbcm.csv", "data/jgbcm_all.csv"):
+        txt = get(base + name).content.decode("shift_jis", "ignore")
+        data = list(csv.reader(io.StringIO(txt)))
+        hi = next(i for i, row in enumerate(data) if row and row[0].strip() == "基準日")
+        col = [c.strip() for c in data[hi]].index("10年")
+        for row in data[hi + 1:]:
+            if len(row) > col:
+                d = parse_jdate(row[0])
+                try:
+                    rows.append((d, float(row[col])))
+                except ValueError:
+                    pass
+        rows = [x for x in rows if x[0]]
+        if len({d for d, _ in rows}) >= 2:
+            break
+    return {"rows": dedupe(rows)}
+
+
+def fred(series):
+    r = get("https://fred.stlouisfed.org/graph/fredgraph.csv", params={"id": series})
+    rows = []
+    for x in csv.reader(io.StringIO(r.text)):
+        if len(x) == 2 and re.fullmatch(r"\d{4}-\d{2}-\d{2}", x[0]) and x[1] not in (".", ""):
+            rows.append((dt.date.fromisoformat(x[0]), x[1]))
+    return {"rows": dedupe(rows)[-30:]}
+
+
+def cnn_fg():
+    r = get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+            headers={"Referer": "https://edition.cnn.com/", "Origin": "https://edition.cnn.com"})
+    return r.json()["fear_and_greed"]
+
+
+# ---------------- 書式 ----------------
+def num(x, nd):
+    return f"{x:,.{nd}f}"
+
+
+def sg(x, nd):
+    return ("+" if x >= 0 else "-") + f"{abs(x):,.{nd}f}"
+
+
+def md(d):
+    return f"{d.month}/{d.day}"
+
+
+def stale(d):
+    return "※最新日付でない可能性" if (TODAY - d).days > 4 else ""
+
+
+def fmt_close(rows, vunit, cunit, nd):
+    (d1, v1), (d0, v0) = rows[-1], rows[-2]
+    ch = v1 - v0
+    value = f"{num(v1, nd)}{vunit}（{md(d1)}終値）{stale(d1)}"
+    change = f"前日比 {sg(ch, nd)}{cunit}（{sg(ch / v0 * 100, 2)}%）"
+    return value, change
+
+
+def fmt_yield(rows):
+    (d1, v1), (d0, v0) = rows[-1], rows[-2]
+    if v1 > 20:  # 旧形式（利回り×10）への保険
+        v1, v0 = v1 / 10, v0 / 10
+    return f"{v1:.3f}%（{md(d1)}）{stale(d1)}", f"前日比 {sg((v1 - v0) * 100, 1)}bp"
+
+
+def fmt_live(q, cunit, nd, label_time=True):
+    """先物・為替: 取得時点の価格と、前営業日終値との差"""
+    rows, price = q["rows"], q.get("price")
+    if price is None or not q.get("time"):
+        return fmt_close(rows, cunit, cunit, nd)
+    t = dt.datetime.fromtimestamp(q["time"], JST)
+    tday = dt.datetime.fromtimestamp(q["time"], q["tz"]).date()
+    prev = [v for d, v in rows if d < tday] or [rows[-2][1]]
+    ch = price - prev[-1]
+    value = f"{num(price, nd)}{cunit}（{t.month}/{t.day} {t:%H:%M}時点）{stale(t.date())}"
+    return value, f"前営業日終値比 {sg(ch, nd)}{cunit}（{sg(ch / prev[-1] * 100, 2)}%）"
+
+
+FG_JA = {"extreme fear": "Extreme Fear（極度の恐怖）", "fear": "Fear（恐怖）", "neutral": "Neutral（中立）",
+         "greed": "Greed（強欲）", "extreme greed": "Extreme Greed（極度の強欲）"}
+
+
+def fmt_fg(j):
+    t = dt.datetime.fromisoformat(str(j["timestamp"]).replace("Z", "+00:00")).astimezone(JST)
+    value = f"{j['score']:.1f}（{t.month}/{t.day} {t:%H:%M}時点）{stale(t.date())}"
+    change = f"前日 {float(j['previous_close']):.1f}、区分 {FG_JA.get(str(j['rating']).lower(), j['rating'])}"
+    return value, change
+
+
+# ---------------- 項目定義（上から順にデータ元を試す） ----------------
+YH = ("Yahoo Finance", "https://finance.yahoo.com/")
+ST = ("Stooq", "https://stooq.com/")
+NK = ("日経の指数公式サイト", "https://indexes.nikkei.co.jp/nkave")
+MOF = ("財務省 国債金利情報", "https://www.mof.go.jp/jgbs/reference/interest_rate/")
+FR = ("FRED（セントルイス連銀）", "https://fred.stlouisfed.org/series/DGS10")
+CNN = ("CNN Fear & Greed Index", "https://edition.cnn.com/markets/fear-and-greed")
+
+ITEMS = [
+    ("日経平均株価", [(NK, lambda: fmt_close(nikkei_csv("nikkei_stock_average_daily_jp.csv")["rows"], "円", "円", 2)),
+                  (YH, lambda: fmt_close(yahoo("^N225")["rows"], "円", "円", 2)),
+                  (ST, lambda: fmt_close(stooq("^nkx")["rows"], "円", "円", 2))]),
+    ("シカゴ日経平均先物（CME円建て）", [(YH, lambda: fmt_live(yahoo("NIY=F"), "円", 0))]),
+    ("TOPIX", [(YH, lambda: fmt_close(yahoo("^TOPX")["rows"], "", "ポイント", 2)),
+               (YH, lambda: fmt_close(yahoo("998405.T")["rows"], "", "ポイント", 2)),
+               (ST, lambda: fmt_close(stooq("^tpx")["rows"], "", "ポイント", 2))]),
+    ("ドル円", [(YH, lambda: fmt_live(yahoo("JPY=X"), "円", 2)),
+             (ST, lambda: fmt_close(stooq("usdjpy")["rows"], "円", "円", 2))]),
+    ("ニューヨークダウ", [(YH, lambda: fmt_close(yahoo("^DJI")["rows"], "ドル", "ドル", 2)),
+                  (ST, lambda: fmt_close(stooq("^dji")["rows"], "ドル", "ドル", 2))]),
+    ("ナスダック総合指数", [(YH, lambda: fmt_close(yahoo("^IXIC")["rows"], "", "ポイント", 2)),
+                   (ST, lambda: fmt_close(stooq("^ndq")["rows"], "", "ポイント", 2))]),
+    ("日本10年国債利回り", [(MOF, lambda: fmt_yield(mof_jgb10()["rows"]))]),
+    ("米国10年国債利回り", [(YH, lambda: fmt_yield(yahoo("^TNX")["rows"])),
+                   (FR, lambda: fmt_yield(fred("DGS10")["rows"]))]),
+    ("日経平均ボラティリティー・インデックス（日経VI）",
+     [(NK, lambda: fmt_close(nikkei_csv("nikkei_stock_average_vi_daily_jp.csv")["rows"], "", "ポイント", 2)),
+      (YH, lambda: fmt_close(yahoo("^JNIV")["rows"], "", "ポイント", 2))]),
+    ("Fear & Greed指数（CNN）", [(CNN, lambda: fmt_fg(cnn_fg()))]),
+]
+
+
+def main():
+    OUT.mkdir(exist_ok=True)
+    day_file = OUT / f"{TODAY.isoformat()}.json"
+    old = {}
+    if day_file.exists():  # 同日の再実行で、前回成功した項目を失敗で上書きしない
+        old = {i["label"]: i for i in json.loads(day_file.read_text("utf-8"))["items"]}
+
+    items = []
+    for label, sources in ITEMS:
+        item = {"label": label, "ok": False, "errors": []}
+        for (src, url), fn in sources:
+            try:
+                value, change = fn()
+                item.update(ok=True, value=value, change=change, source=src, source_url=url)
+                break
+            except Exception as e:
+                item["errors"].append(f"{src}: {str(e)[:160]}")
+        if not item["ok"] and old.get(label, {}).get("ok"):
+            item = old[label]
+        items.append(item)
+        print(("OK  " if item["ok"] else "NG  ") + label, item.get("value", ""), item["errors"])
+
+    lines = ["## ■ マーケット・スナップショット", ""]
+    for n, i in enumerate(items, 1):
+        if i["ok"]:
+            lines.append(f"{n}. **{i['label']}**｜{i['value']} ／ {i['change']}")
+        else:
+            lines.append(f"{n}. **{i['label']}**｜未取得（自動取得に失敗）")
+    used = {}
+    for i in items:
+        if i["ok"]:
+            used.setdefault(i["source"], i["source_url"])
+    sources = ["出典:"] + [f"- [{k}]({v})" for k, v in used.items()]
+
+    doc = {
+        "date": TODAY.isoformat(),
+        "generated_at": NOW.isoformat(timespec="seconds"),
+        "ok_count": sum(i["ok"] for i in items),
+        "total": len(items),
+        "items": items,
+        "snapshot_markdown": "\n".join(lines),
+        "sources_markdown": "\n".join(sources),
+    }
+    body = json.dumps(doc, ensure_ascii=False, indent=2)
+    day_file.write_text(body, "utf-8")
+    (OUT / "latest.json").write_text(body, "utf-8")
+    print(f"\n{doc['ok_count']}/{doc['total']} 項目取得")
+
+
+if __name__ == "__main__":
+    main()
