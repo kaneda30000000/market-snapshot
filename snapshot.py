@@ -177,21 +177,26 @@ def pdf_text(content):
 
 
 def jpx_prime_counts(day):
-    """指定日の東証プライム 値上り・値下り銘柄数。休場・未公開なら None"""
+    """指定日の東証プライム 値上り・値下り銘柄数。PDFが無い(404)なら None。接続できなければ例外"""
     ymd = day.strftime("%Y%m%d")
-    r = None
+    r, err = None, None
     for i in range(3):
         try:
-            r = S.get(JPX_PDF.format(ymd), timeout=25)
+            r = S.get(JPX_PDF.format(ymd), timeout=25,
+                      headers={"Referer": "https://www.jpx.co.jp/markets/equities/volume-and-value/"})
             if r.status_code in (200, 404):
                 break
-        except requests.RequestException:
-            pass
+            err = f"HTTP {r.status_code}"
+        except requests.RequestException as e:
+            r, err = None, type(e).__name__
         time.sleep(3)
-    if r is None or r.status_code == 404:
+    if r is None or r.status_code not in (200, 404):
+        raise RuntimeError(f"JPXに接続できない（{ymd}: {err}）")
+    if r.status_code == 404:
         return None
-    if r.status_code != 200:
-        raise RuntimeError(f"JPX {ymd}: HTTP {r.status_code}")
+    ctype = r.headers.get("Content-Type", "")
+    if not r.content.startswith(b"%PDF"):
+        raise RuntimeError(f"JPX {ymd}: PDFではない応答（{ctype}）")
     text = pdf_text(r.content)
     if ymd not in text:
         raise RuntimeError(f"JPX {ymd}: PDF内に日付がない")
@@ -199,12 +204,12 @@ def jpx_prime_counts(day):
         nums = re.findall(r"\d[\d,]*(?:\.\d+)?", line)
         if "プライム" in line and len(nums) == 14:
             break
-    else:  # 日本語が読めない場合に備え、数値14個の最初の行（表の1行目＝プライム）を使う
+    else:
         rows = [re.findall(r"\d[\d,]*(?:\.\d+)?", ln) for ln in text.splitlines()]
         rows = [x for x in rows if len(x) == 14]
         if rows:
             nums = rows[0]
-        else:  # 行が崩れて抽出された場合：見出しの日付の直後に並ぶ14個の数値を使う
+        else:
             toks = re.findall(r"\d[\d,]*(?:\.\d+)?", text)
             if ymd not in toks or len(toks) < toks.index(ymd) + 15:
                 raise RuntimeError(f"JPX {ymd}: 騰落銘柄数の行が見つからない")
@@ -220,33 +225,38 @@ def jpx_prime_counts(day):
 
 
 def advdec_ratios():
-    cache_file = OUT / "advdec.json"
+    cache_file = OUT / "advdec_v2.json"   # 旧版の記録（誤って休場扱いした日を含む）は使わない
     cache = json.loads(cache_file.read_text("utf-8")) if cache_file.exists() else {}
-    sessions = []  # 新しい順 [(date, up, down)]
-    day, fetched = TODAY, 0
-    for _ in range(70):
-        day -= dt.timedelta(days=1)
-        if day.weekday() >= 5:
-            continue
-        key = day.isoformat()
-        if key not in cache:
-            if fetched >= 45:
-                break
-            got = jpx_prime_counts(day)
-            fetched += 1
-            time.sleep(0.5)
-            if got is None:
-                if (TODAY - day).days <= 3:  # 直近の欠落は未公開の可能性があるので記録しない
+    sessions, day, fetched, miss_streak, found_any = [], TODAY, 0, 0, False
+    try:
+        for _ in range(70):
+            day -= dt.timedelta(days=1)
+            if day.weekday() >= 5:
+                continue
+            key = day.isoformat()
+            if key not in cache:
+                if fetched >= 45:
+                    break
+                got = jpx_prime_counts(day)
+                fetched += 1
+                time.sleep(0.5)
+                if got is None:
+                    miss_streak += 1
+                    if not found_any and miss_streak >= 5:
+                        raise RuntimeError("直近の平日5日分のPDFがすべて404（URLの変更かアクセス拒否の可能性）")
+                    if (TODAY - day).days > 3:
+                        cache[key] = "休場"
                     continue
-                cache[key] = None
-            else:
+                miss_streak, found_any = 0, True
                 cache[key] = list(got)
-        if cache[key]:
-            sessions.append((day, *cache[key]))
-        if len(sessions) >= 26:
-            break
-    OUT.mkdir(exist_ok=True)
-    cache_file.write_text(json.dumps(dict(sorted(cache.items())[-120:]), ensure_ascii=False, indent=0), "utf-8")
+            if isinstance(cache[key], list):
+                found_any = True
+                sessions.append((day, *cache[key]))
+            if len(sessions) >= 26:
+                break
+    finally:
+        OUT.mkdir(exist_ok=True)
+        cache_file.write_text(json.dumps(dict(sorted(cache.items())[-120:]), ensure_ascii=False, indent=0), "utf-8")
     if len(sessions) < 26:
         raise RuntimeError(f"営業日データが{len(sessions)}日分しかない")
 
@@ -257,11 +267,34 @@ def advdec_ratios():
     latest = sessions[0][0]
     cur = {n: ratio(0, n) for n in (25, 10, 6)}
     prev = {n: ratio(1, n) for n in (25, 10, 6)}
-    zone = "過熱" if cur[25] > 120 else "売られすぎ" if cur[25] < 70 else "中立圏"
     value = (f"25日 {cur[25]:.2f}%・10日 {cur[10]:.2f}%・6日 {cur[6]:.2f}%"
-             f"（{md(latest)}時点、25日は{zone}）{stale(latest)}")
+             f"（{md(latest)}時点、25日は{zone_of(cur[25])}）{stale(latest)}")
     change = "前日比 " + "・".join(f"{n}日 {sg(cur[n] - prev[n], 2)}ポイント" for n in (25, 10, 6))
     return value, change
+
+
+def zone_of(x):
+    return "過熱" if x > 120 else "売られすぎ" if x < 70 else "中立圏"
+
+
+def nikkeiyosoku_ratio25():
+    """予備：投資の森の25日騰落レシオ。表の同じ行の日経平均終値が公式値と一致する場合だけ採用"""
+    import html as htmlmod
+    r = get("https://nikkeiyosoku.com/up_down_ratio/")
+    text = re.sub(r"\s+", " ", htmlmod.unescape(re.sub(r"<[^>]+>", " ", r.text)))
+    rows = re.findall(r"(\d{4})/(\d{1,2})/(\d{1,2}) ([\d,]+\.\d+) [+\-−]?[\d,.]+ -?[\d.]+% (\d{2,3}\.\d+)", text)
+    if len(rows) < 2:
+        raise RuntimeError("表が見つからない")
+    y, mo, d, close, ratio = rows[0]
+    day = dt.date(int(y), int(mo), int(d))
+    official = dict(nikkei_csv("nikkei_stock_average_daily_jp.csv")["rows"])
+    if day not in official or abs(official[day] - float(close.replace(",", ""))) > 0.02:
+        raise RuntimeError("表の日経平均終値が公式値と一致しない")
+    cur, prev = float(ratio), float(rows[1][4])
+    if not 30 < cur < 300:
+        raise RuntimeError(f"値が想定範囲外: {cur}")
+    value = f"25日 {cur:.2f}%（{md(day)}時点、25日は{zone_of(cur)}。10日・6日は取得できず）{stale(day)}"
+    return value, f"前日比 25日 {sg(cur - prev, 2)}ポイント"
 
 
 def cnn_fg():
@@ -335,6 +368,7 @@ FR = ("FRED（セントルイス連銀）", "https://fred.stlouisfed.org/series/
 MT = ("松井証券 TOPIX時系列", "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index")
 MT2 = ("松井証券 グロース250時系列", "https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index")
 JPXS = ("日本取引所グループ 商況プリント（値上り・値下り銘柄数から計算）", "https://www.jpx.co.jp/markets/equities/volume-and-value/")
+NY = ("投資の森 騰落レシオ", "https://nikkeiyosoku.com/up_down_ratio/")
 CNN = ("CNN Fear & Greed Index", "https://edition.cnn.com/markets/fear-and-greed")
 
 SKIP = object()  # 安定したデータ元がなく、自動取得の対象外とする項目
@@ -358,7 +392,7 @@ ITEMS = [
     ("SOX（PHL半導体指数）", [(YH, lambda: fmt_close(yahoo("^SOX")["rows"], "", "ポイント", 2))]),
     ("WTI原油先物", [(YH, lambda: fmt_close(yahoo("CL=F")["rows"], "ドル", "ドル", 2))]),
     ("VIX恐怖指数", [(YH, lambda: fmt_close(yahoo("^VIX")["rows"], "", "ポイント", 2))]),
-    ("騰落レシオ（東証プライム）", [(JPXS, advdec_ratios)]),
+    ("騰落レシオ（東証プライム）", [(JPXS, advdec_ratios), (NY, nikkeiyosoku_ratio25)]),
     ("日経平均ボラティリティー・インデックス（日経VI）",
      [(NK, lambda: fmt_close(nikkei_csv("nikkei_stock_average_vi_daily_jp.csv")["rows"], "", "ポイント", 2)),
       (YH, lambda: fmt_close(yahoo("^JNIV")["rows"], "", "ポイント", 2))]),
