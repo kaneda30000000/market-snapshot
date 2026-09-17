@@ -1,11 +1,11 @@
 {
   "date": "2026-09-17",
-  "generated_at": "2026-09-17T23:14:10+09:00",
-  "ok_count": 10,
-  "total": 10,
+  "generated_at": "2026-09-17T23:35:27+09:00",
+  "ok_count": 14,
+  "total": 15,
   "items": [
     {
-      "label": "日経平均株価",
+      "label": "日経225",
       "ok": true,
       "errors": [],
       "value": "64,136.25円（9/17終値）",
@@ -14,11 +14,11 @@
       "source_url": "https://indexes.nikkei.co.jp/nkave"
     },
     {
-      "label": "シカゴ日経平均先物（CME円建て）",
+      "label": "日経225先物（シカゴCME円建てで代用）",
       "ok": true,
       "errors": [],
-      "value": "64,840円（9/17 23:04時点）",
-      "change": "前営業日終値比 +590円（+0.92%）",
+      "value": "64,780円（9/17 23:25時点）",
+      "change": "前営業日終値比 +530円（+0.82%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
@@ -32,34 +32,43 @@
       "source_url": "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index"
     },
     {
+      "label": "グロース250",
+      "ok": true,
+      "errors": [],
+      "value": "789.35（9/17終値）",
+      "change": "前日比 +18.05ポイント（+2.34%）",
+      "source": "松井証券 グロース250時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index"
+    },
+    {
+      "label": "NYダウ",
+      "ok": true,
+      "errors": [],
+      "value": "51,739.39ドル（9/17終値）",
+      "change": "前日比 +277.49ドル（+0.54%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "NASDAQ",
+      "ok": true,
+      "errors": [],
+      "value": "26,409.97（9/17終値）",
+      "change": "前日比 +431.54ポイント（+1.66%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
       "label": "ドル円",
       "ok": true,
       "errors": [],
-      "value": "155.64円（9/17 23:14時点）",
-      "change": "前営業日終値比 +0.38円（+0.24%）",
+      "value": "155.71円（9/17 23:35時点）",
+      "change": "前営業日終値比 +0.45円（+0.29%）",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
     },
     {
-      "label": "ニューヨークダウ",
-      "ok": true,
-      "errors": [],
-      "value": "51,659.14ドル（9/17終値）",
-      "change": "前日比 +197.24ドル（+0.38%）",
-      "source": "Yahoo Finance",
-      "source_url": "https://finance.yahoo.com/"
-    },
-    {
-      "label": "ナスダック総合指数",
-      "ok": true,
-      "errors": [],
-      "value": "26,374.92（9/17終値）",
-      "change": "前日比 +396.49ポイント（+1.53%）",
-      "source": "Yahoo Finance",
-      "source_url": "https://finance.yahoo.com/"
-    },
-    {
-      "label": "日本10年国債利回り",
+      "label": "日本国債10年利回り",
       "ok": true,
       "errors": [],
       "value": "2.998%（9/16）",
@@ -68,13 +77,47 @@
       "source_url": "https://www.mof.go.jp/jgbs/reference/interest_rate/"
     },
     {
-      "label": "米国10年国債利回り",
+      "label": "米国債10年利回り",
       "ok": true,
       "errors": [],
-      "value": "4.947%（9/17）",
-      "change": "前日比 -5.9bp",
+      "value": "4.949%（9/17）",
+      "change": "前日比 -5.7bp",
       "source": "Yahoo Finance",
       "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "SOX（PHL半導体指数）",
+      "ok": true,
+      "errors": [],
+      "value": "11,584.12（9/17終値）",
+      "change": "前日比 +338.01ポイント（+3.01%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "WTI原油先物",
+      "ok": true,
+      "errors": [],
+      "value": "100.39ドル（9/17終値）",
+      "change": "前日比 -2.04ドル（-1.99%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "VIX恐怖指数",
+      "ok": true,
+      "errors": [],
+      "value": "15.79（9/17終値）",
+      "change": "前日比 -1.92ポイント（-10.84%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "騰落レシオ（東証プライム）",
+      "ok": false,
+      "errors": [
+        "日本取引所グループ 商況プリント（値上り・値下り銘柄数から計算）: 営業日データが0日分しかない"
+      ]
     },
     {
       "label": "日経平均ボラティリティー・インデックス（日経VI）",
@@ -89,12 +132,12 @@
       "label": "Fear & Greed指数（CNN）",
       "ok": true,
       "errors": [],
-      "value": "29.1（9/17 23:11時点）",
+      "value": "29.6（9/17 23:31時点）",
       "change": "前日 26.5、区分 Fear（恐怖）",
       "source": "CNN Fear & Greed Index",
       "source_url": "https://edition.cnn.com/markets/fear-and-greed"
     }
   ],
-  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経平均株価**｜64,136.25円（9/17終値） ／ 前日比 +213.25円（+0.33%）\n2. **シカゴ日経平均先物（CME円建て）**｜64,840円（9/17 23:04時点） ／ 前営業日終値比 +590円（+0.92%）\n3. **TOPIX**｜4,094.19（9/17終値） ／ 前日比 +32.47ポイント（+0.80%）\n4. **ドル円**｜155.64円（9/17 23:14時点） ／ 前営業日終値比 +0.38円（+0.24%）\n5. **ニューヨークダウ**｜51,659.14ドル（9/17終値） ／ 前日比 +197.24ドル（+0.38%）\n6. **ナスダック総合指数**｜26,374.92（9/17終値） ／ 前日比 +396.49ポイント（+1.53%）\n7. **日本10年国債利回り**｜2.998%（9/16） ／ 前日比 -3.0bp\n8. **米国10年国債利回り**｜4.947%（9/17） ／ 前日比 -5.9bp\n9. **日経平均ボラティリティー・インデックス（日経VI）**｜28.15（9/17終値） ／ 前日比 -0.29ポイント（-1.02%）\n10. **Fear & Greed指数（CNN）**｜29.1（9/17 23:11時点） ／ 前日 26.5、区分 Fear（恐怖）",
-  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [松井証券 TOPIX時系列](https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
+  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経225**｜64,136.25円（9/17終値） ／ 前日比 +213.25円（+0.33%）\n2. **日経225先物（シカゴCME円建てで代用）**｜64,780円（9/17 23:25時点） ／ 前営業日終値比 +530円（+0.82%）\n3. **TOPIX**｜4,094.19（9/17終値） ／ 前日比 +32.47ポイント（+0.80%）\n4. **グロース250**｜789.35（9/17終値） ／ 前日比 +18.05ポイント（+2.34%）\n5. **NYダウ**｜51,739.39ドル（9/17終値） ／ 前日比 +277.49ドル（+0.54%）\n6. **NASDAQ**｜26,409.97（9/17終値） ／ 前日比 +431.54ポイント（+1.66%）\n7. **ドル円**｜155.71円（9/17 23:35時点） ／ 前営業日終値比 +0.45円（+0.29%）\n8. **日本国債10年利回り**｜2.998%（9/16） ／ 前日比 -3.0bp\n9. **米国債10年利回り**｜4.949%（9/17） ／ 前日比 -5.7bp\n10. **SOX（PHL半導体指数）**｜11,584.12（9/17終値） ／ 前日比 +338.01ポイント（+3.01%）\n11. **WTI原油先物**｜100.39ドル（9/17終値） ／ 前日比 -2.04ドル（-1.99%）\n12. **VIX恐怖指数**｜15.79（9/17終値） ／ 前日比 -1.92ポイント（-10.84%）\n13. **騰落レシオ（東証プライム）**｜未取得（自動取得に失敗）\n14. **日経平均ボラティリティー・インデックス（日経VI）**｜28.15（9/17終値） ／ 前日比 -0.29ポイント（-1.02%）\n15. **Fear & Greed指数（CNN）**｜29.6（9/17 23:31時点） ／ 前日 26.5、区分 Fear（恐怖）",
+  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [松井証券 TOPIX時系列](https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index)\n- [松井証券 グロース250時系列](https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
 }
