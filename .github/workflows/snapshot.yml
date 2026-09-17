@@ -2,9 +2,11 @@ name: market-snapshot
 
 on:
   schedule:
-    # 平日朝 6:15 と 6:45 JST（UTCでは前日 21:15 / 21:45、日〜木）
+    # 平日朝 6:15 と 6:45 JST（UTCでは前日 21:15 / 21:45、日〜木）：スナップショット作成
     - cron: "15 21 * * 0-4"
     - cron: "45 21 * * 0-4"
+    # 平日 16:40 JST（UTC 7:40、月〜金）：騰落レシオ用にJPXの当日分を記録するだけ
+    - cron: "40 7 * * 1-5"
   workflow_dispatch: {}
 
 permissions:
@@ -25,7 +27,12 @@ jobs:
           python-version: "3.12"
       - run: pip install requests pypdf
       - name: 取得
-        run: python snapshot.py
+        run: |
+          if [ "${{ github.event.schedule }}" = "40 7 * * 1-5" ]; then
+            python snapshot.py --collect-jpx
+          else
+            python snapshot.py
+          fi
       - name: 保存
         run: |
           git config user.name "snapshot-bot"
@@ -34,5 +41,6 @@ jobs:
           git diff --cached --quiet || git commit -m "snapshot $(TZ=Asia/Tokyo date +%F)"
           git pull --rebase && git push
       - name: 全項目取得できたか確認（失敗があればGitHubからメール通知）
+        if: github.event.schedule != '40 7 * * 1-5'
         run: |
           python -c "import json,sys; d=json.load(open('data/latest.json',encoding='utf-8')); print(d['ok_count'],'/',d['total']); sys.exit(0 if d['ok_count']==d['total'] else 1)"
