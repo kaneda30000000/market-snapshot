@@ -131,6 +131,44 @@ def fred(series):
     return {"rows": dedupe(rows)[-30:]}
 
 
+def matsui_topix():
+    """松井証券の時系列ページ上部にある「現在値・前日比」を読む。
+    読み違いを防ぐため、(1)値の範囲 (2)現在値・前日比・騰落率の整合 (3)TOPIX連動ETF(1306)の騰落率との差 を確認する。"""
+    import html as htmlmod
+    r = get("https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index")
+    text = htmlmod.unescape(re.sub(r"<[^>]+>", " ", r.text))
+    text = re.sub(r"\s+", " ", text)
+    m = re.search(r"(\d{4})/(\d{1,2})/(\d{1,2}) (\d{1,2}):(\d{2}).{0,80}?現在値 ([\d,]+\.\d+) 前日比 "
+                  r"([+\-−]?[\d,]+\.\d+) ?\(([+\-−]?[\d.]+)%\)", text)
+    if not m:
+        raise RuntimeError("ページ上に現在値が見つからない")
+    y, mo, d, hh, mm = (int(x) for x in m.groups()[:5])
+    v = float(m[6].replace(",", ""))
+    ch = float(m[7].replace(",", "").replace("−", "-"))
+    pct = float(m[8].replace("−", "-"))
+    if not 1000 < v < 10000:
+        raise RuntimeError(f"値が想定範囲外: {v}")
+    prev = v - ch
+    if abs(ch / prev * 100 - pct) > 0.03:
+        raise RuntimeError("現在値・前日比・騰落率が整合しない")
+    day = dt.date(y, mo, d)
+    try:  # ETFとの照合（ETFが取れないときは照合を省略）
+        etf = dict(yahoo("1306.T")["rows"])
+        days = sorted(k for k in etf if k <= day)
+        if len(days) >= 2 and days[-1] == day:
+            etf_pct = (etf[days[-1]] / etf[days[-2]] - 1) * 100
+            if abs(etf_pct - pct) > 1.0:
+                raise ValueError(f"ETF騰落率{etf_pct:.2f}%と不一致")
+    except ValueError as e:
+        raise RuntimeError(str(e))
+    except Exception:
+        pass
+    closed = hh >= 15
+    when = f"{mo}/{d}終値" if closed else f"{mo}/{d} {hh}:{mm:02d}時点"
+    value = f"{num(v, 2)}（{when}）{stale(day)}"
+    return value, f"前日比 {sg(ch, 2)}ポイント（{sg(pct, 2)}%）"
+
+
 def cnn_fg():
     r = get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
             headers={"Referer": "https://edition.cnn.com/", "Origin": "https://edition.cnn.com"})
@@ -199,6 +237,7 @@ ST = ("Stooq", "https://stooq.com/")
 NK = ("日経の指数公式サイト", "https://indexes.nikkei.co.jp/nkave")
 MOF = ("財務省 国債金利情報", "https://www.mof.go.jp/jgbs/reference/interest_rate/")
 FR = ("FRED（セントルイス連銀）", "https://fred.stlouisfed.org/series/DGS10")
+MT = ("松井証券 TOPIX時系列", "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index")
 CNN = ("CNN Fear & Greed Index", "https://edition.cnn.com/markets/fear-and-greed")
 
 ITEMS = [
@@ -206,9 +245,7 @@ ITEMS = [
                   (YH, lambda: fmt_close(yahoo("^N225")["rows"], "円", "円", 2)),
                   (ST, lambda: fmt_close(stooq("^nkx")["rows"], "円", "円", 2))]),
     ("シカゴ日経平均先物（CME円建て）", [(YH, lambda: fmt_live(yahoo("NIY=F"), "円", 0))]),
-    ("TOPIX", [(YH, lambda: fmt_close(yahoo("^TOPX")["rows"], "", "ポイント", 2)),
-               (YH, lambda: fmt_close(yahoo("998405.T")["rows"], "", "ポイント", 2)),
-               (ST, lambda: fmt_close(stooq("^tpx")["rows"], "", "ポイント", 2))]),
+    ("TOPIX", [(MT, matsui_topix)]),
     ("ドル円", [(YH, lambda: fmt_live(yahoo("JPY=X"), "円", 2)),
              (ST, lambda: fmt_close(stooq("usdjpy")["rows"], "円", "円", 2))]),
     ("ニューヨークダウ", [(YH, lambda: fmt_close(yahoo("^DJI")["rows"], "ドル", "ドル", 2)),
