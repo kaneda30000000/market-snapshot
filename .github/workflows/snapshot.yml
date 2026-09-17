@@ -1,0 +1,38 @@
+name: market-snapshot
+
+on:
+  schedule:
+    # 平日朝 6:15 と 6:45 JST（UTCでは前日 21:15 / 21:45、日〜木）
+    - cron: "15 21 * * 0-4"
+    - cron: "45 21 * * 0-4"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: 取得
+        run: python snapshot.py
+      - name: 保存
+        run: |
+          git config user.name "snapshot-bot"
+          git config user.email "snapshot-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "snapshot $(TZ=Asia/Tokyo date +%F)"
+          git pull --rebase && git push
+      - name: 全項目取得できたか確認（失敗があればGitHubからメール通知）
+        run: |
+          python -c "import json,sys; d=json.load(open('data/latest.json',encoding='utf-8')); print(d['ok_count'],'/',d['total']); sys.exit(0 if d['ok_count']==d['total'] else 1)"
