@@ -485,18 +485,27 @@ def auto_mode():
         print(f"{stamp} 土日のため何もしない")
         return 0
 
-    have_today = False
+    have_today, done, need = False, 0, 0
     try:
-        have_today = json.loads((OUT / "latest.json").read_text("utf-8")).get("date") == TODAY.isoformat()
+        cur = json.loads((OUT / "latest.json").read_text("utf-8"))
+        have_today = cur.get("date") == TODAY.isoformat()
+        done, need = cur.get("ok_count", 0), cur.get("total", 0)
     except Exception:
         pass
+    short = have_today and need and done < need   # 当日分はあるが取りこぼしがある
 
     # 朝の取得：6:10〜7:40 は10分おきに更新。7:40を過ぎても当日分が無ければ10:00まで粘る。
     # 6:10より前には取らない（米国市場の引け＝日本時間5:00〜6:00 の直後は終値が確定していないため）。
     in_window = 6 * 60 + 10 <= hm <= 7 * 60 + 40
+    # 当日分が無い場合は10:00まで、取りこぼしがある場合は9:00まで粘る
+    # （データ元がメンテナンス中などで落ちていても、復旧したら次の便で埋められるように）
     catch_up = 7 * 60 + 40 < hm < 10 * 60 and not have_today
-    if in_window or catch_up:
-        print(f"{stamp} スナップショットを取得する" + ("" if in_window else "（遅れの取り戻し：当日分がまだ無い）"))
+    retry = 7 * 60 + 40 < hm < 9 * 60 and short
+    if in_window or catch_up or retry:
+        why = ("" if in_window else
+               "（遅れの取り戻し：当日分がまだ無い）" if catch_up else
+               f"（取りこぼし {need - done} 項目を埋めにいく）")
+        print(f"{stamp} スナップショットを取得する" + why)
         ok, total = main()
         # 窓の終わり近くで取りこぼしがあるときだけ異常終了させ、通知メールを出す
         if ok < total and hm >= 7 * 60 + 20:
