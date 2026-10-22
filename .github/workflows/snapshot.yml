@@ -2,11 +2,13 @@ name: market-snapshot
 
 on:
   schedule:
-    # 平日朝 6:15 と 6:45 JST（UTCでは前日 21:15 / 21:45、日〜木）：スナップショット作成
-    - cron: "15 21 * * 0-4"
-    - cron: "45 21 * * 0-4"
-    # 平日 16:40 JST（UTC 7:40、月〜金）：騰落レシオ用にJPXの当日分を記録するだけ
-    - cron: "40 7 * * 1-5"
+    # 10分おきに起動する。GitHubの定時実行は数時間遅れることがあり、予定時刻は当てにできない。
+    # そこで「何時に動くか」をGitHubに任せず、実際に動いた時刻（日本時間）を見て
+    # やることを snapshot.py --auto が決める。時間帯外の起動は十数秒で何もせず終わる。
+    #   6:10〜 7:40 JST → スナップショット取得（10分おきに更新）
+    #   7:40〜10:00 JST → 当日分がまだ無ければ取得（遅れの取り戻し）
+    #  16:10〜23:30 JST → 騰落レシオ用にJPXの当日分を記録
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -21,26 +23,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: 時間帯の判定（対象外の時刻ならここで終わる）
+        id: gate
+        run: |
+          w=$(TZ=Asia/Tokyo date +%u)
+          t=$((10#$(TZ=Asia/Tokyo date +%H%M)))
+          run=no
+          if [ "$w" -le 5 ]; then
+            if [ "$t" -ge 600 ] && [ "$t" -lt 1000 ]; then run=yes; fi
+            if [ "$t" -ge 1610 ] && [ "$t" -le 2330 ]; then run=yes; fi
+          fi
+          echo "JST $(TZ=Asia/Tokyo date '+%m/%d(%a) %H:%M') / 実行する: $run"
+          echo "run=$run" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'yes'
       - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'yes'
         with:
           python-version: "3.12"
       - run: pip install requests pypdf
-      - name: 取得
-        run: |
-          if [ "${{ github.event.schedule }}" = "40 7 * * 1-5" ]; then
-            python snapshot.py --collect-jpx
-          else
-            python snapshot.py
-          fi
+        if: steps.gate.outputs.run == 'yes'
+      - name: 取得（動いた時刻で内容を判断）
+        id: fetch
+        if: steps.gate.outputs.run == 'yes'
+        continue-on-error: true
+        run: python snapshot.py --auto
       - name: 保存
+        if: steps.gate.outputs.run == 'yes'
         run: |
           git config user.name "snapshot-bot"
           git config user.email "snapshot-bot@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || git commit -m "snapshot $(TZ=Asia/Tokyo date +%F)"
-          git pull --rebase && git push
-      - name: 全項目取得できたか確認（失敗があればGitHubからメール通知）
-        if: github.event.schedule != '40 7 * * 1-5'
+          if git diff --cached --quiet; then
+            echo "変更なし"
+            exit 0
+          fi
+          git commit -m "snapshot $(TZ=Asia/Tokyo date '+%F %H:%M')"
+          for i in 1 2 3; do
+            if git pull --rebase && git push; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: 取りこぼしがあれば失敗させて通知メールを出す
+        if: steps.gate.outputs.run == 'yes' && steps.fetch.outcome == 'failure'
         run: |
-          python -c "import json,sys; d=json.load(open('data/latest.json',encoding='utf-8')); print(d['ok_count'],'/',d['total']); sys.exit(0 if d['ok_count']==d['total'] else 1)"
+          echo "取得できなかった項目があります。上の「取得」のログを確認してください。"
+          exit 1
