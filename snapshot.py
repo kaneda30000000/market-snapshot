@@ -450,11 +450,81 @@ def main():
     body = json.dumps(doc, ensure_ascii=False, indent=2)
     day_file.write_text(body, "utf-8")
     (OUT / "latest.json").write_text(body, "utf-8")
-    print(f"\n{doc['ok_count']}/{doc['total']} 項目取得")
+    print(f"\n{doc['ok_count']}/{doc['total']} 項目取得 -> {OUT / 'latest.json'}")
+    return doc["ok_count"], doc["total"]
+
+
+TRY_FILE = "jpx_tries.json"   # 休場日にJPXを何度も取りにいかないための回数記録
+
+
+def jpx_tries(day):
+    """その日に何回JPXを取りにいったかを数える（記録して回数を返す）"""
+    f = OUT / TRY_FILE
+    try:
+        d = json.loads(f.read_text("utf-8"))
+    except Exception:
+        d = {}
+    if d.get("date") != day:
+        d = {"date": day, "n": 0}
+    d["n"] += 1
+    OUT.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(d, ensure_ascii=False), "utf-8")
+    return d["n"]
+
+
+def auto_mode():
+    """実際に動いた時刻（日本時間）を見て、やることを自分で決める。
+
+    GitHubの定時実行は数時間遅れることがあり、予定時刻は当てにできない。
+    そこで10分おきに起動し、「いま何時か」で判断する方式にしている。
+    戻り値は終了コード。
+    """
+    hm = NOW.hour * 60 + NOW.minute
+    stamp = f"JST {NOW:%m/%d %H:%M}"
+    if NOW.weekday() >= 5:
+        print(f"{stamp} 土日のため何もしない")
+        return 0
+
+    have_today = False
+    try:
+        have_today = json.loads((OUT / "latest.json").read_text("utf-8")).get("date") == TODAY.isoformat()
+    except Exception:
+        pass
+
+    # 朝の取得：6:10〜7:40 は10分おきに更新。7:40を過ぎても当日分が無ければ10:00まで粘る。
+    # 6:10より前には取らない（米国市場の引け＝日本時間5:00〜6:00 の直後は終値が確定していないため）。
+    in_window = 6 * 60 + 10 <= hm <= 7 * 60 + 40
+    catch_up = 7 * 60 + 40 < hm < 10 * 60 and not have_today
+    if in_window or catch_up:
+        print(f"{stamp} スナップショットを取得する" + ("" if in_window else "（遅れの取り戻し：当日分がまだ無い）"))
+        ok, total = main()
+        # 窓の終わり近くで取りこぼしがあるときだけ異常終了させ、通知メールを出す
+        if ok < total and hm >= 7 * 60 + 20:
+            print(f"{total - ok} 項目が取れていない")
+            return 3
+        return 0
+
+    # 夕方のJPX記録（騰落レシオ用）：16:10〜23:30。記録済み・試行8回超なら何もしない。
+    if 16 * 60 + 10 <= hm <= 23 * 60 + 30:
+        if TODAY.isoformat() in load_adv():
+            print(f"{stamp} JPXは当日分を記録済み")
+            return 0
+        n = jpx_tries(TODAY.isoformat())
+        if n > 8:
+            print(f"{stamp} JPXの取得を{n - 1}回試したので打ち切る（休場日の可能性）")
+            return 0
+        print(f"{stamp} JPXの当日分を記録する（{n}回目）")
+        jpx_collect()
+        return 0
+
+    print(f"{stamp} 取得する時間帯ではないので何もしない")
+    return 0
 
 
 if __name__ == "__main__":
-    if "--collect-jpx" in sys.argv:
+    if "--auto" in sys.argv:
+        sys.exit(auto_mode())
+    elif "--collect-jpx" in sys.argv:
         jpx_collect()
     else:
         main()
