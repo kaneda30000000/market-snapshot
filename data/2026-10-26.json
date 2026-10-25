@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-26",
+  "generated_at": "2026-10-26T06:11:44+09:00",
+  "ok_count": 15,
+  "total": 15,
+  "items": [
+    {
+      "label": "日経225",
+      "ok": true,
+      "errors": [],
+      "value": "62,693.16円（10/23終値）",
+      "change": "前日比 -214.68円（-0.34%）",
+      "source": "日経の指数公式サイト",
+      "source_url": "https://indexes.nikkei.co.jp/nkave"
+    },
+    {
+      "label": "日経225先物（シカゴCME円建てで代用）",
+      "ok": true,
+      "errors": [],
+      "value": "62,640円（10/24 05:59時点）",
+      "change": "前営業日終値比 +190円（+0.30%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "TOPIX",
+      "ok": true,
+      "errors": [],
+      "value": "3,965.81（10/23終値）",
+      "change": "前日比 -31.69ポイント（-0.79%）",
+      "source": "松井証券 TOPIX時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index"
+    },
+    {
+      "label": "グロース250",
+      "ok": true,
+      "errors": [],
+      "value": "754.60（10/23終値）",
+      "change": "前日比 +1.33ポイント（+0.18%）",
+      "source": "松井証券 グロース250時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index"
+    },
+    {
+      "label": "NYダウ",
+      "ok": true,
+      "errors": [],
+      "value": "52,215.16ドル（10/23終値）",
+      "change": "前日比 -652.82ドル（-1.23%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "NASDAQ",
+      "ok": true,
+      "errors": [],
+      "value": "25,955.34（10/23終値）",
+      "change": "前日比 -53.52ポイント（-0.21%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "ドル円",
+      "ok": true,
+      "errors": [],
+      "value": "157.01円（10/26 06:11時点）",
+      "change": "前営業日終値比 +0.51円（+0.33%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "日本国債10年利回り",
+      "ok": true,
+      "errors": [],
+      "value": "2.914%（10/22）",
+      "change": "前日比 -0.9bp",
+      "source": "財務省 国債金利情報",
+      "source_url": "https://www.mof.go.jp/jgbs/reference/interest_rate/"
+    },
+    {
+      "label": "米国債10年利回り",
+      "ok": true,
+      "errors": [],
+      "value": "4.988%（10/23）",
+      "change": "前日比 +3.5bp",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "SOX（PHL半導体指数）",
+      "ok": true,
+      "errors": [],
+      "value": "10,779.46（10/23終値）",
+      "change": "前日比 +47.48ポイント（+0.44%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "WTI原油先物",
+      "ok": true,
+      "errors": [],
+      "value": "103.27ドル（10/23終値）",
+      "change": "前日比 +3.80ドル（+3.82%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "VIX恐怖指数",
+      "ok": true,
+      "errors": [],
+      "value": "19.45（10/23終値）",
+      "change": "前日比 +0.42ポイント（+2.21%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "騰落レシオ（東証プライム）",
+      "ok": true,
+      "errors": [
+        "日本取引所グループ 商況プリント（値上り・値下り銘柄数から計算）: JPXの記録が連続26営業日分そろっていない（直近26営業日のうち23日分）"
+      ],
+      "value": "25日 104.40%（10/23時点、25日は中立圏。10日・6日は記録の蓄積待ち）",
+      "change": "前日比 25日 -3.00ポイント",
+      "source": "投資の森 騰落レシオ",
+      "source_url": "https://nikkeiyosoku.com/up_down_ratio/"
+    },
+    {
+      "label": "日経平均ボラティリティー・インデックス（日経VI）",
+      "ok": true,
+      "errors": [],
+      "value": "38.25（10/23終値）",
+      "change": "前日比 +2.28ポイント（+6.34%）",
+      "source": "日経の指数公式サイト",
+      "source_url": "https://indexes.nikkei.co.jp/nkave"
+    },
+    {
+      "label": "Fear & Greed指数（CNN）",
+      "ok": true,
+      "errors": [],
+      "value": "21.0（10/24 08:59時点）",
+      "change": "前日 19.8、区分 Extreme Fear（極度の恐怖）",
+      "source": "CNN Fear & Greed Index",
+      "source_url": "https://edition.cnn.com/markets/fear-and-greed"
+    }
+  ],
+  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経225**｜62,693.16円（10/23終値） ／ 前日比 -214.68円（-0.34%）\n2. **日経225先物（シカゴCME円建てで代用）**｜62,640円（10/24 05:59時点） ／ 前営業日終値比 +190円（+0.30%）\n3. **TOPIX**｜3,965.81（10/23終値） ／ 前日比 -31.69ポイント（-0.79%）\n4. **グロース250**｜754.60（10/23終値） ／ 前日比 +1.33ポイント（+0.18%）\n5. **NYダウ**｜52,215.16ドル（10/23終値） ／ 前日比 -652.82ドル（-1.23%）\n6. **NASDAQ**｜25,955.34（10/23終値） ／ 前日比 -53.52ポイント（-0.21%）\n7. **ドル円**｜157.01円（10/26 06:11時点） ／ 前営業日終値比 +0.51円（+0.33%）\n8. **日本国債10年利回り**｜2.914%（10/22） ／ 前日比 -0.9bp\n9. **米国債10年利回り**｜4.988%（10/23） ／ 前日比 +3.5bp\n10. **SOX（PHL半導体指数）**｜10,779.46（10/23終値） ／ 前日比 +47.48ポイント（+0.44%）\n11. **WTI原油先物**｜103.27ドル（10/23終値） ／ 前日比 +3.80ドル（+3.82%）\n12. **VIX恐怖指数**｜19.45（10/23終値） ／ 前日比 +0.42ポイント（+2.21%）\n13. **騰落レシオ（東証プライム）**｜25日 104.40%（10/23時点、25日は中立圏。10日・6日は記録の蓄積待ち） ／ 前日比 25日 -3.00ポイント\n14. **日経平均ボラティリティー・インデックス（日経VI）**｜38.25（10/23終値） ／ 前日比 +2.28ポイント（+6.34%）\n15. **Fear & Greed指数（CNN）**｜21.0（10/24 08:59時点） ／ 前日 19.8、区分 Extreme Fear（極度の恐怖）",
+  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [松井証券 TOPIX時系列](https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index)\n- [松井証券 グロース250時系列](https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [投資の森 騰落レシオ](https://nikkeiyosoku.com/up_down_ratio/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
+}
