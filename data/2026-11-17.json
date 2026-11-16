@@ -1,0 +1,145 @@
+{
+  "date": "2026-11-17",
+  "generated_at": "2026-11-17T06:12:44+09:00",
+  "ok_count": 15,
+  "total": 15,
+  "items": [
+    {
+      "label": "日経225",
+      "ok": true,
+      "errors": [],
+      "value": "59,662.02円（11/16終値）",
+      "change": "前日比 -1,480.33円（-2.42%）",
+      "source": "日経の指数公式サイト",
+      "source_url": "https://indexes.nikkei.co.jp/nkave"
+    },
+    {
+      "label": "日経225先物（シカゴCME円建てで代用）",
+      "ok": true,
+      "errors": [],
+      "value": "59,190円（11/17 06:02時点）",
+      "change": "前営業日終値比 -1,875円（-3.07%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "TOPIX",
+      "ok": true,
+      "errors": [],
+      "value": "3,901.37（11/16終値）",
+      "change": "前日比 -40.20ポイント（-1.02%）",
+      "source": "松井証券 TOPIX時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index"
+    },
+    {
+      "label": "グロース250",
+      "ok": true,
+      "errors": [],
+      "value": "713.30（11/16終値）",
+      "change": "前日比 -14.82ポイント（-2.04%）",
+      "source": "松井証券 グロース250時系列",
+      "source_url": "https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index"
+    },
+    {
+      "label": "NYダウ",
+      "ok": true,
+      "errors": [],
+      "value": "51,608.17ドル（11/16終値）",
+      "change": "前日比 -739.38ドル（-1.41%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "NASDAQ",
+      "ok": true,
+      "errors": [],
+      "value": "24,509.76（11/16終値）",
+      "change": "前日比 -626.51ポイント（-2.49%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "ドル円",
+      "ok": true,
+      "errors": [],
+      "value": "159.48円（11/17 06:12時点）",
+      "change": "前営業日終値比 -0.40円（-0.25%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "日本国債10年利回り",
+      "ok": true,
+      "errors": [],
+      "value": "2.899%（11/13）",
+      "change": "前日比 +5.8bp",
+      "source": "財務省 国債金利情報",
+      "source_url": "https://www.mof.go.jp/jgbs/reference/interest_rate/"
+    },
+    {
+      "label": "米国債10年利回り",
+      "ok": true,
+      "errors": [],
+      "value": "5.121%（11/16）",
+      "change": "前日比 -3.3bp",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "SOX（PHL半導体指数）",
+      "ok": true,
+      "errors": [],
+      "value": "9,610.65（11/16終値）",
+      "change": "前日比 -535.67ポイント（-5.28%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "WTI原油先物",
+      "ok": true,
+      "errors": [],
+      "value": "85.50ドル（11/16終値）",
+      "change": "前日比 -3.06ドル（-3.46%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "VIX恐怖指数",
+      "ok": true,
+      "errors": [],
+      "value": "23.60（11/16終値）",
+      "change": "前日比 +4.30ポイント（+22.28%）",
+      "source": "Yahoo Finance",
+      "source_url": "https://finance.yahoo.com/"
+    },
+    {
+      "label": "騰落レシオ（東証プライム）",
+      "ok": true,
+      "errors": [],
+      "value": "25日 106.10%・10日 111.92%・6日 189.15%（11/16時点、25日は中立圏）",
+      "change": "前日比 25日 +3.60ポイント・10日 -4.44ポイント・6日 +49.72ポイント",
+      "source": "日本取引所グループ 商況プリント（値上り・値下り銘柄数から計算）",
+      "source_url": "https://www.jpx.co.jp/markets/equities/volume-and-value/"
+    },
+    {
+      "label": "日経平均ボラティリティー・インデックス（日経VI）",
+      "ok": true,
+      "errors": [],
+      "value": "35.10（11/16終値）",
+      "change": "前日比 +0.71ポイント（+2.06%）",
+      "source": "日経の指数公式サイト",
+      "source_url": "https://indexes.nikkei.co.jp/nkave"
+    },
+    {
+      "label": "Fear & Greed指数（CNN）",
+      "ok": true,
+      "errors": [],
+      "value": "29.8（11/17 05:59時点）",
+      "change": "前日 38.6、区分 Fear（恐怖）",
+      "source": "CNN Fear & Greed Index",
+      "source_url": "https://edition.cnn.com/markets/fear-and-greed"
+    }
+  ],
+  "snapshot_markdown": "## ■ マーケット・スナップショット\n\n1. **日経225**｜59,662.02円（11/16終値） ／ 前日比 -1,480.33円（-2.42%）\n2. **日経225先物（シカゴCME円建てで代用）**｜59,190円（11/17 06:02時点） ／ 前営業日終値比 -1,875円（-3.07%）\n3. **TOPIX**｜3,901.37（11/16終値） ／ 前日比 -40.20ポイント（-1.02%）\n4. **グロース250**｜713.30（11/16終値） ／ 前日比 -14.82ポイント（-2.04%）\n5. **NYダウ**｜51,608.17ドル（11/16終値） ／ 前日比 -739.38ドル（-1.41%）\n6. **NASDAQ**｜24,509.76（11/16終値） ／ 前日比 -626.51ポイント（-2.49%）\n7. **ドル円**｜159.48円（11/17 06:12時点） ／ 前営業日終値比 -0.40円（-0.25%）\n8. **日本国債10年利回り**｜2.899%（11/13） ／ 前日比 +5.8bp\n9. **米国債10年利回り**｜5.121%（11/16） ／ 前日比 -3.3bp\n10. **SOX（PHL半導体指数）**｜9,610.65（11/16終値） ／ 前日比 -535.67ポイント（-5.28%）\n11. **WTI原油先物**｜85.50ドル（11/16終値） ／ 前日比 -3.06ドル（-3.46%）\n12. **VIX恐怖指数**｜23.60（11/16終値） ／ 前日比 +4.30ポイント（+22.28%）\n13. **騰落レシオ（東証プライム）**｜25日 106.10%・10日 111.92%・6日 189.15%（11/16時点、25日は中立圏） ／ 前日比 25日 +3.60ポイント・10日 -4.44ポイント・6日 +49.72ポイント\n14. **日経平均ボラティリティー・インデックス（日経VI）**｜35.10（11/16終値） ／ 前日比 +0.71ポイント（+2.06%）\n15. **Fear & Greed指数（CNN）**｜29.8（11/17 05:59時点） ／ 前日 38.6、区分 Fear（恐怖）",
+  "sources_markdown": "出典:\n- [日経の指数公式サイト](https://indexes.nikkei.co.jp/nkave)\n- [Yahoo Finance](https://finance.yahoo.com/)\n- [松井証券 TOPIX時系列](https://finance.matsui.co.jp/stock/.TOPX/daily-bar/index)\n- [松井証券 グロース250時系列](https://finance.matsui.co.jp/stock/.MTHR/daily-bar/index)\n- [財務省 国債金利情報](https://www.mof.go.jp/jgbs/reference/interest_rate/)\n- [日本取引所グループ 商況プリント（値上り・値下り銘柄数から計算）](https://www.jpx.co.jp/markets/equities/volume-and-value/)\n- [CNN Fear & Greed Index](https://edition.cnn.com/markets/fear-and-greed)"
+}
